@@ -1,4 +1,3 @@
 ### Leaders
-* [Leader Name](mailto:leader.email@owasp.org)
-* [Leader Name](mailto:leader.email@owasp.org)
-* [Leader Name](mailto:leader.email@owasp.org)
+* [Ivan Novikov](mailto:ivan.novikov@owasp.org)
+* [Silvia Pravida](mailto:ivan.novikov@owasp.org)
