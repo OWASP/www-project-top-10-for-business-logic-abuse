@@ -60,7 +60,7 @@ Because the endpoint lacks any rate limiting or per-user quota:
 - The service risks DoS and large overage bills from its AI vendor.
 
 
-### Scenario #2: 
+### Scenario #2: Insufficient rate limit for expensive operations
 
 A PDF generation service exposes GraphQL endpoints to its customers with a flat limit of 100 calls per minute per user.
 Every operation counts as one call. Because the generatePDF mutation uses much more CPU and memory but still counts as a single call

@@ -20,7 +20,7 @@ These vulnerabilities compromise business logic by decoupling critical checks fr
 ## Examples of attacks
 
 
-### Scenario #1
+### Scenario #1: Race Condition in Drupal password reset flow
 
 Drupal core has a race-condition vulnerability in its UserController that manages password reset flow and allows reuse
 of an already consumed token by sending two reset requests in quick succession using last-byte synchronization technique:
