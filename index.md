@@ -22,6 +22,28 @@ The OWASP Business Logic Abuse Top 10 provides a structured methodology for iden
 * Empower Developers and Architects: Equip technical stakeholders with tools and insights to design secure workflows and logic.
 * Define Top 10 Issues: Establish a comprehensive, prioritized list of the most critical business logic abuses, supported by real-world case studies and a computational model.
 
+# First Release, May 30th, 2025 OWASP AppSec Global EU, Barcelona
+
+#1: Lifecycle & Orphaned Transitions Flaws — 13.1%
+
+#2: Logic Bomb, Loops and Halting Issues — 5.8%
+
+#3: Data Type Smuggling — 4.7%
+
+#4: Sequential State Bypass — 4.5%
+
+#5: Data Oracle Exposure — 4%
+
+#6: Missing Roles and Permission Checks — 2.8%
+
+#7: Transition Validation Flaws — 2.2%
+
+#8: Replays of Idempotency Operations — 1.5%
+
+#9: Race Condition and Concurrency Issues — 1.1%
+
+#10: Resource Quota Violations — ~1%
+
 # Unique Approach
 This project departs from traditional vulnerability frameworks by leveraging the Turing machine model to define and categorize business logic abuse. Applications are viewed as abstract machines with:
 * Tape: Representing memory or data storage (e.g., databases, in-memory objects).
