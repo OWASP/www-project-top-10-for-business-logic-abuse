@@ -1,28 +1,28 @@
-OWASP Top 10 API Security Risks – 2023
+# OWASP Top 10 for Business Logic Abuse – 2025
 
-| Risk | Description |
-| ---- | ----------- |
-| [Broken Object Level Authorization][api1] | APIs tend to expose endpoints that handle object identifiers, creating a wide attack surface of Object Level Access Control issues. Object level authorization checks should be considered in every function that accesses a data source using an ID from the user. |
-| [API2:2023 - Broken Authentication][api2] | Authentication mechanisms are often implemented incorrectly, allowing attackers to compromise authentication tokens or to exploit implementation flaws to assume other user's identities temporarily or permanently. Compromising a system's ability to identify the client/user, compromises API security overall. |
-| [API3:2023 - Broken Object Property Level Authorization][api3] | This category combines [API3:2019 Excessive Data Exposure][1] and [API6:2019 - Mass Assignment][2], focusing on the root cause: the lack of or improper authorization validation at the object property level. This leads to information exposure or manipulation by unauthorized parties. |
-| [API4:2023 - Unrestricted Resource Consumption][api4] | Satisfying API requests requires resources such as network bandwidth, CPU, memory, and storage. Other resources such as emails/SMS/phone calls or biometrics validation are made available by service providers via API integrations, and paid for per request. Successful attacks can lead to Denial of Service or an increase of operational costs. |
-| [API5:2023 - Broken Function Level Authorization][api5] | Complex access control policies with different hierarchies, groups, and roles, and an unclear separation between administrative and regular functions, tend to lead to authorization flaws. By exploiting these issues, attackers can gain access to other users’ resources and/or administrative functions. |
-| [API6:2023 - Unrestricted Access to Sensitive Business Flows][api6] | APIs vulnerable to this risk expose a business flow - such as buying a ticket, or posting a comment - without compensating for how the functionality could harm the business if used excessively in an automated manner. This doesn't necessarily come from implementation bugs. |
-| [API7:2023 - Server Side Request Forgery][api7] | Server-Side Request Forgery (SSRF) flaws can occur when an API is fetching a remote resource without validating the user-supplied URI. This enables an attacker to coerce the application to send a crafted request to an unexpected destination, even when protected by a firewall or a VPN. |
-| [API8:2023 - Security Misconfiguration][api8] | APIs and the systems supporting them typically contain complex configurations, meant to make the APIs more customizable. Software and DevOps engineers can miss these configurations, or don't follow security best practices when it comes to configuration, opening the door for different types of attacks.  |
-| [API9:2023 - Improper Inventory Management][api9] | APIs tend to expose more endpoints than traditional web applications, making proper and updated documentation highly important. A proper inventory of hosts and deployed API versions also are important to mitigate issues such as deprecated API versions and exposed debug endpoints. |
-| [API10:2023 - Unsafe Consumption of APIs][api10] | Developers tend to trust data received from third-party APIs more than user input, and so tend to adopt weaker security standards. In order to compromise APIs, attackers go after integrated third-party services instead of trying to compromise the target API directly. |
+| Class name                                                 | Coverage<sup>1</sup> | Summary                                                                                                                                                               |
+|------------------------------------------------------------|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [BLA1:2025 - Lifecycle & Orphaned Transitions Flaws][bla1] | 13.1%                | Orphaned sessions, tokens, or subflows persist after parent completion, leaving stale state reachable and letting attackers replay actions or corrupt business logic. |
+| [BLA2:2025 - Logic Bomb, Loops and Halting Issues][bla2]   | 5.8%                 | Hidden triggers, unbounded loops, or unchecked recursion lacking exit conditions enable endless processing, resource exhaustion, or unintended privileged execution.  |
+| [BLA3:2025 - Data type smuggling][bla3]                    | 4.7%                 | Loose type checks, unsafe casting, or deserialization admit mismatched data types, subverting logic, executing code, or corrupting data.                              |
+| [BLA4:2025 - Sequential State Bypass][bla4]                | 4.5%                 | Weak state-machine enforcement lets attackers skip mandatory steps or combine invalid states, executing unauthorized actions outside intended progression.            |
+| [BLA5:2025 - Data Oracle Exposure][bla5]                   | 4%                   | Distinct messages, UI cues, or timing variations reveal internal state, enabling enumeration, workflow mapping, and targeted attacks.                                 |
+| [BLA6:2025 - Missing Roles and Permission Checks][bla6]    | 2.8%                 | Applications omit or misapply role and permission checks, allowing unauthorized actors to perform privileged operations and escalate access.                          |
+| [BLA7:2025 - Transition Validation Flaw][bla7]             | 2.2%                 | Attackers bypass mandatory transactional conditions, advancing workflows without required validations and triggering incomplete or invalid operations.                |
+| [BLA8:2025 - Replays of Idempotency Operations][bla8]      | 1.5%                 | One-time operations lack uniqueness or consumption tracking, permitting request replays that repeat effects and violate business invariants.                          |
+| [BLA9:2025 - Race Condition and Concurrency Issues][bla9]  | 1.1%                 | Concurrent actions on shared resources without synchronization lead to timing races, enabling inconsistent updates or unauthorized outcomes.                          |
+| [BLA10:2025 - Resource Quota Violations][bla10]            | ~1%                  | Absent rate limits or usage caps let attackers overconsume resource-intensive endpoints, exhausting compute, inflating costs, and degrading service availability.     |
 
-[1]: https://owasp.org/API-Security/editions/2019/en/0xa3-excessive-data-exposure/
-[2]: https://owasp.org/API-Security/editions/2019/en/0xa6-mass-assignment/
-[3]: https://owasp.org/API-Security/editions/2019/en/0xa4-lack-of-resources-and-rate-limiting/
-[api1]: 0xa1-broken-object-level-authorization.md
-[api2]: 0xa2-broken-authentication.md
-[api3]: 0xa3-broken-object-property-level-authorization.md
-[api4]: 0xa4-unrestricted-resource-consumption.md
-[api5]: 0xa5-broken-function-level-authorization.md
-[api6]: 0xa6-unrestricted-access-to-sensitive-business-flows.md
-[api7]: 0xa7-server-side-request-forgery.md
-[api8]: 0xa8-security-misconfiguration.md
-[api9]: 0xa9-improper-inventory-management.md
-[api10]: 0xaa-unsafe-consumption-of-apis.md
+<sup>1</sup> Of the analyzed security issues on Github. Referer to [the Methodology][methodology] section for further information. 
+
+[bla1]: lifecycle-orphaned-transitions-flaws.md
+[bla2]: logic-bomb-loops-halting-issues.md
+[bla3]: data-type-smuggling.md
+[bla4]: sequential-state-bypass.md
+[bla5]: data-oracle-exposure.md
+[bla6]: missing-roles-and-permission-checks.md
+[bla7]: transition-validation-flaw.md
+[bla8]: replays-of-idempotency-operations.md
+[bla9]: race-condition-and-concurrency-issues.md
+[bla10]: resource-quota-violations.md
+[methodology]: ../methodology/methodology.md
