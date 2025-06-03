@@ -1,5 +1,5 @@
 ---
-title: The Top 10
+title: TheTop10
 layout:  null
 tab: true
 order: 1
