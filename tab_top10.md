@@ -1,9 +1,9 @@
 ---
 title: Top10
-layout: null
+layout:  null
 tab: true
 order: 1
-tags: business-logic-abuse
+tags: example-tag
 ---
 
 # OWASP Top 10 for Business Logic Abuse – 2025
