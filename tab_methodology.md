@@ -36,7 +36,7 @@ cohesion and silhouette score.
 Next, we discarded clusters whose silhouette fell below our threshold and excluded individual CVE with low classification
 confidence. Similar clusters were then merged to eliminate redundancy.
 
-Finally, we remove clusters that are not related to business logic attacks and are covered with other Top 10s, such as:
+Finally, we removed clusters that are not related to business logic attacks and are covered with other Top 10s, such as:
 - Issues with cryptography.
 - Security misconfigurations.
 - Injection attacks.
