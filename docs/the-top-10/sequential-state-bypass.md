@@ -1,4 +1,10 @@
-# Sequential State Bypass
+---
+title: "BLA4:2025 - Sequential State Bypass"
+layout: col-sidebar
+tab: false
+order: 4
+tags: business-logic-abuse
+---
 
 ## Overview
 
@@ -25,8 +31,8 @@ payment).
 
 ### Scenario #1: Completing checkout without triggering a real payment transaction
 
-An insufficient origin check in the WooCommerce IPN callback lets attackers forge “payment completed” notifications, updating
-an order’s status without ever triggering a real transaction.
+An insufficient origin check of IPN callback in the WooCommerce plugins such as GloBee and CardGate lets attackers forge
+“payment completed” notifications, updating an order’s status without ever triggering a real transaction.
 
 By crafting fake IPN calls, fraudsters bypass payment checks,  leading to unpaid orders being fulfilled and undermining
 trust in order integrity.

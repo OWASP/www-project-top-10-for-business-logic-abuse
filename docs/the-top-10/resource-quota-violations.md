@@ -1,5 +1,10 @@
-# Resource Quota Violations
-
+---
+title: "BLA10:2025 - Resource Quota Violations"
+layout: col-sidebar
+tab: false
+order: 10
+tags: business-logic-abuse
+---
 
 ## Overview
 

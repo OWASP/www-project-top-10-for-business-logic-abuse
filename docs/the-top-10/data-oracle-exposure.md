@@ -1,4 +1,10 @@
-# Data Oracle Exposure
+---
+title: "BLA5:2025 - Data Oracle Exposure"
+layout: col-sidebar
+tab: false
+order: 5
+tags: business-logic-abuse
+---
 
 ## Overview
 
@@ -76,7 +82,7 @@ Versions of the Fides open-source server prior to 2.44.0 only hashed passwords f
 
 1. Authentication request by an existing user with incorrect password:
 ```shell
-POST /api/auth/login
+POST /api/v1/login
 {
     "username": "Alice"
     "password": "xxx"
@@ -89,7 +95,7 @@ Response:
 
 2. Authentication request by a non-existing user:
 ```shell
-POST /api/auth/login
+POST /api/v1/login
 {
     "username": "Bob",
     "password": "yyy"

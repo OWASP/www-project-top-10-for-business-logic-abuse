@@ -1,4 +1,10 @@
-# Lifecycle & Orphaned Transitions Flaws
+---
+title: "BLA1:2025 - Lifecycle & Orphaned Transitions Flaws"
+layout: col-sidebar
+tab: false
+order: 1
+tags: business-logic-abuse
+---
 
 ## Overview
 
@@ -47,7 +53,7 @@ ArcSight ESM improperly handled expired domain resources, allowing reference to 
 leakage.
 
 ## Mapped CWE
--  CWE-705
+- CWE-705
 - CWE-672
 
 ## Mapped CVE

@@ -1,6 +1,6 @@
 ---
-title: TheTop10
-layout:  null
+title: Top10
+layout: null
 tab: true
 order: 1
 tags: business-logic-abuse
@@ -21,16 +21,16 @@ tags: business-logic-abuse
 | [BLA9:2025 - Race Condition and Concurrency Issues][bla9]  | 1.1%                 | Concurrent actions on shared resources without synchronization lead to timing races, enabling inconsistent updates or unauthorized outcomes.                          |
 | [BLA10:2025 - Resource Quota Violations][bla10]            | ~1%                  | Absent rate limits or usage caps let attackers overconsume resource-intensive endpoints, exhausting compute, inflating costs, and degrading service availability.     |
 
-<sup>1</sup> Of the analyzed security issues on Github. Referer to [the Methodology][methodology] section for further information. 
+<sup>1</sup> Of the analyzed security issues on Github. Referer to [the Methodology][methodology] section for further information.
 
-[bla1]: lifecycle-orphaned-transitions-flaws.md
-[bla2]: logic-bomb-loops-halting-issues.md
-[bla3]: data-type-smuggling.md
-[bla4]: sequential-state-bypass.md
-[bla5]: data-oracle-exposure.md
-[bla6]: missing-roles-and-permission-checks.md
-[bla7]: transition-validation-flaw.md
-[bla8]: replays-of-idempotency-operations.md
-[bla9]: race-condition-and-concurrency-issues.md
-[bla10]: resource-quota-violations.md
-[methodology]: ../methodology/methodology.md
+[bla1]: docs/the-top-10/lifecycle-orphaned-transitions-flaws.html
+[bla2]: docs/the-top-10/logic-bomb-loops-halting-issues.html
+[bla3]: docs/the-top-10/data-type-smuggling.html
+[bla4]: docs/the-top-10/sequential-state-bypass.html
+[bla5]: docs/the-top-10/data-oracle-exposure.html
+[bla6]: docs/the-top-10/missing-roles-and-permission-checks.html
+[bla7]: docs/the-top-10/transition-validation-flaw.html
+[bla8]: docs/the-top-10/replays-of-idempotency-operations.html
+[bla9]: docs/the-top-10/race-condition-and-concurrency-issues.html
+[bla10]: docs/the-top-10/resource-quota-violations.html
+[methodology]: tab_methodology.html

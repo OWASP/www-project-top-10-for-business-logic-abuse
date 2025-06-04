@@ -1,5 +1,10 @@
-# Data type smuggling
-
+---
+title: "BLA3:2025 - Data Oracle Exposure"
+layout: col-sidebar
+tab: false
+order: 3
+tags: business-logic-abuse
+---
 
 ## Overview
 This class of vulnerabilities occurs when systems fail to enforce strict data‐type checks: unchecked casting, unsafe deserialization
@@ -30,20 +35,13 @@ from bypassing authentication and manipulating transaction amounts to triggering
 
 ## Examples
 
-### Scenario 1: Denial-of-Service through an header type conversion
+### Scenario 1: Injecting malicious __proto__ properties through JSON Pointer paths
 
-The Drupal Security Kit module (≤ 2.0.2) improperly handles header configuration parameters: if a header value is passed
-as an array instead of a string, the code misinterprets the type and crashes the HTTP response generation, resulting in
-a Denial-of-Service.
+The jsonpointer library (versions ≤ 5.0.0) contains a type-confusion flaw (CVE-2021-23807) that lets crafted pointer components
+treated as arrays slip past its prior fix for prototype-pollution, re-opening the ability to write to core JavaScript prototypes.
 
-**By sending a JSON-encoded array in place of a string header, an attacker can trigger the DoS:**
-```shell
-GET /api/v1/ \
-     -H "X-Content-Security-Policy: []"
-```
-
-Here, the Security Kit expects "X-Content-Security-Policy" as a string but receives an array (`[]`), causing a type confusion
-and forcing Drupal to crash the request handler.
+REST endpoints that accept user-supplied JSON Pointer strings therefore allow an attacker to insert properties like `__proto__`
+or constructor into Object.prototype, silently altering every subsequently created object.
 
 
 ## Mapped CWEs
@@ -58,3 +56,4 @@ and forcing Drupal to crash the request handler.
 - CVE-2024-13275
 - CVE-2022-25845
 - CVE-2017-9805
+- CVE-2021-23807

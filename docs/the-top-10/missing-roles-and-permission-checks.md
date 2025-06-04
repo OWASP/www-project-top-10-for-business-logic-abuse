@@ -1,4 +1,10 @@
-# Missing Roles and Permission Checks
+---
+title: "BLA6:2025 - Missing Roles and Permission Checks"
+layout: col-sidebar
+tab: false
+order: 6
+tags: business-logic-abuse
+---
 
 ## Overview
 
@@ -35,7 +41,7 @@ or data through hidden or undocumented endpoints.
 
 ### Scenario #1: Gitlab branch deletion
 
-A Gitlab branch deletion endpoint lacks any role or permission check, so any valid token will succeed regardless of its scope:
+A Gitlab branch deletion endpoint lacked any role or permission check, so any valid token will succeed regardless of its scope:
 1. For a legitimate call by a maintainer, the system verifies the token is valid and then deletes the branch:
 ```shell
 DELETE /api/v4/projects/:projectId/repository/branches/:branchId
@@ -81,5 +87,5 @@ This way users can escalate their privileges.
 ## Sample CVEs
 - CVE-2023-3290
 - CVE-2023-3286
-- CVE-2024-8180
 - CVE-2024-55070
+- CVE-2021-39931

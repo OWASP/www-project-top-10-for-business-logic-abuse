@@ -1,4 +1,10 @@
-# Transition Validation Flaw
+---
+title: "BLA7:2025 - Transition Validation Flaw"
+layout: col-sidebar
+tab: false
+order: 7
+tags: business-logic-abuse
+---
 
 ## Overview
 

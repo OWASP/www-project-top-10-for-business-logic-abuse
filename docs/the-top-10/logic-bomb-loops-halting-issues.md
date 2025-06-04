@@ -1,4 +1,10 @@
-# Logic Bomb, Loops and Halting Issues
+---
+title: "BLA2:2025 - Logic Bomb, Loops and Halting Issues"
+layout: col-sidebar
+tab: false
+order: 2
+tags: business-logic-abuse
+---
 
 ## Overview
 APIs that automate business processes can contain hidden triggers, endless loops, unchecked-input loops,

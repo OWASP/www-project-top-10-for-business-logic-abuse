@@ -1,4 +1,10 @@
-# Methodology
+---
+title: Methodology
+layout: null
+tab: true
+order: 1
+tags: business-logic-abuse
+---
 
 ## Overview
 
@@ -12,11 +18,11 @@ We used a large language model to validate that the proposed model provides suff
 from 2023 to 2025, clustered the classification results, and verified the model against a sample of 25k GitHub security
 issues. This confirms that the model is both theoretically complete and practically aligned with real-world vulnerabilities.
 
-**The analysis was performed in four steps:**
+The analysis was performed in four steps:
 
 ### Stage 1: Model definition and initial classification
 
-We started with the basic groups of issues in regard to the Turing-machine primitives: Tape, State, Transition. For each
+We started with the basic groups of issues in regards to the Turing-machine primitives: Tape, State, Transition. For each
 group, we introduced around 20 root causes which resulted in 63 distinct classes of vulnerabilities.
 
 To validate the coverage, we used an LLM to classify all CVEs from 2023 to 2025 (76k CVE in total).
@@ -30,6 +36,12 @@ cohesion and silhouette score.
 Next, we discarded clusters whose silhouette fell below our threshold and excluded individual CVE with low classification
 confidence. Similar clusters were then merged to eliminate redundancy.
 
+Finally, we remove clusters that are not related to business logic attacks and are covered with other Top 10s, such as:
+- Issues with cryptography.
+- Security misconfigurations.
+- Injection attacks.
+- Improper API and asset inventory management including unsafe API consumption.
+
 Result: 12 tightly-bound, high-confidence clusters of real-world exploits.
 
 ### Stage 3: Clustering of existing CVE and publicly known exploits
@@ -39,7 +51,6 @@ As the next step, we removed any clusters whose coverage fell below our threshol
 the taxonomy.
 
 After merging similar groups and polishing definitions, we arrived at ten cohesive clusters of vulnerabilities.
-
 
 ### Stage 4: Clustering of existing CVE and publicly known exploits
 
