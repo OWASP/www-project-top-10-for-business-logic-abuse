@@ -12,52 +12,54 @@ Overrun Limit of Idempotent Operations happens when an operation that is meant t
 actually be performed multiple times in quick succession. Well-known examples are redeeming a coupon, issuing a refund,
 or granting a free trial.
 
+These vulnerabilities exploit a gap between the transaction validation and the protected action (Time of Check, Time of 
+Use - TOCTOU). Attackers send duplicate or parallel requests within the same validation window so that each request passes
+he “unused” check before any state update is recorded. The result is unintended repeated execution of a single-use operation,
+leading to financial loss, inventory depletion, or exhaustion of limited offers.
 
-If these artifacts remain active after the parent process ends, attackers can reuse or replay them to invoke orphaned transitions,
-bypass controls, and corrupt business logic, leading to unauthorized actions, data exposure, or process disruptions.
 
+## Root causes
 
-## Description
+This flaw exists solely because multiple requests against the same resource collide while reading and writing its usage
+state without synchronization. When two or more processes:
 
-When a parent process completes, whether it’s an e-commerce checkout, a batch import job, or a multi-step configuration
-wizard, systems must:
+1. Read the “remaining uses” counter or “unused” flag at the same time (time-of-check),
+2. 
+2. Then both proceed to apply the action (time-of-use) before either write commits, each sees the original pre-update
+state and is allowed to succeed.
 
-* Invalidate or expire all intermediate artifacts (temporary sessions, locks, one-time tokens, or queued tasks).
-* Disable or remove any endpoints, UI components, or sub-routines specific to that workflow.
-* Release or reset resources so that downstream operations cannot execute against stale context.
-* Detect and clean up any partial or inconsistent state left behind (e.g. half-written records, orphaned database rows,
-abandoned locks) to prevent data corruption or logic gaps.
-
-Failures in any of these areas leave orphaned transitions callable, allow inconsistent artifacts to persist, and enable
-attackers to replay steps, resurrect closed processes, or corrupt system state:
-
-* **Orphaned control flows:** Sub-routines and API paths remain reachable after their parent context ends, letting attackers
-trigger hidden operations without proper checks.
-
-* **Use-after-expiration:** Tokens or sessions linger beyond their intended lifespan, so revoked accounts or cancelled tasks
-can be inadvertently reactivated.
-
-* **Inconsistent state residues:** Partial data writes, leftover locks, and abandoned jobs create logic gaps that attackers
-exploit to corrupt workflows or leak sensitive information.
+Without a lock, transactional guard, or any atomic increment/decrement, the counter may underflow or accept duplicates.
+Logging or fingerprinting of processed request payloads is absent, so duplicate payloads aren’t recognized or rejected.
 
 
 ## Examples
 
-### Scenario #1: Use of a resource after expiration allow gaining improper access
+### Scenario #1: Invite link replay in anything-llm due to a race condition
 
-An operation on a resource after expiration or release in Fortinet FortiManager versions 6.4.12 through 7.4.0 allows an
-attacker to gain improper access to FortiGate via valid credentials.
+The mintplex-labs/anything-llm repository’s invite-acceptance API fails to lock invite tokens atomically. Attackers send
+multiple concurrent requests for a single invite link, and each request succeeds in creating a new account (time-of-check
+and time-of-use overlap).
+
+This bypasses the intended security mechanism that restricts invite acceptance to a single user, leading to unauthorized
+user creation without detection in the invite tab.
 
 
-### Scenario #2: Information leakage through expired domain resources
+### Scenario #2: Race Condition in nopCommerce Gift Cards
 
-ArcSight ESM improperly handled expired domain resources, allowing reference to revoked domains and potential information
-leakage.
+A CMS’s login handler first initializes every new session with role=admin then immediately downgrades it based on user data before returning. If you race a second request into the admin‑only dashboard endpoint before the downgrade executes, you retain admin privileges.
+To exploit this vulnerability, attackers can use the following sequence of HTTP calls:
+
+**Step 1.** Initiate login (long user‑lookup).
+
+nopCommerce before 4.80.0 lacks any locking when placing orders. As a result, two near-simultaneous calls to
+`POST /checkout/OpcConfirmOrder/` both check the gift card balance before either updates it, allowing double redemption
+of the same gift card.
+
+An attacker can exploit this to make multiple purchases using a single gift card, effectively obtaining goods for free.
+
 
 ## Mapped CWE
-- CWE-705
-- CWE-672
+- CWE-367
 
-## Mapped CVE
-- CVE-2025-2517
-- CVE-2024-47060
+## Sample CVE
+- CVE-2024-2913

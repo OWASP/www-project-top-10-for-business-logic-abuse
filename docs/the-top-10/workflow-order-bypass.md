@@ -1,5 +1,5 @@
 ---
-title: "BLA2:2025 - Logic Bomb, Loops and Halting Issues"
+title: "BLA2:2025 - Concurrent workflow order bypass (CWOB)"
 layout: col-sidebar
 tab: false
 order: 2
@@ -7,66 +7,79 @@ tags: business-logic-abuse
 ---
 
 ## Overview
-APIs that automate business processes can contain hidden triggers, endless loops, unchecked-input loops,
-and unbounded recursion when code omits gating, termination checks, input validation or depth limits.
+Workflow Order Bypass occurs when an attacker leverages a race condition to execute a final workflow step before its
+required prior steps have fully applied. This can happen in two distinct ways: either across separate commands or events
+in a distributed process that lacks a central orchestrator, or within the hidden internal stages of a single request
+where multiple sub-states are processed without an atomic guard.
 
-Attackers exploit these lapses in trigger gating, loop exit conditions, parameter validation and recursion controls to
-repeatedly fire hidden routines, exhaust CPU and memory or crash services, resulting in financial loss or denial of service.
 
-## Description
-Halting problems in automated business logic create vulnerabilities when exit conditions are unreachable or missing due to lack of proper termination guarantees.
+In both cases attackers skip mandatory checks such as multi-factor verification or email confirmation, resulting in
+unauthorized access, privilege escalation, or completion of sensitive operations without ever satisfying the intended
+business logic.
 
-Implementation flaws include missing loop bounds checks, inadequate recursion depth tracking, unchecked integer inputs controlling iterations
-and hidden conditional logic triggered by specific inputs.
 
-These failures occur in both standalone applications and distributed microservices, where a single non-terminating component can block entire transaction pipelines:
-* **Hidden Trigger Vulnerabilities**: Code paths that activate only under specific conditions without authorization checks.
-Attackers can probe for undocumented parameters or date-based triggers that execute privileged operations, causing unexpected transactions,
-data purges, or state bypasses.
+## Root causes
 
-* **Endless Loop Exploitation:** Routines with unreachable exit conditions such as counters that never reach terminal values, 
-flags that never change state, or pointers that cycle through the same memory locations indefinitely.
-Attackers target these with specially crafted inputs that force the worst-case path.
-
-* **Unchecked Input Manipulation:** pagination handlers or bulk processing functions that accept user-controlled loop bounds without validation.
-Attackers submit extreme values (2^31-1) for page sizes, transaction counts, or retry attempts,
-forcing systems to attempt processing billions of operations until resources exhaust.
-
-* **Recursive Depth Attacks:** event handlers or parsers that process nested structures without depth limits.
-JSON parsers, XML processors, and message handlers become vulnerable when processing self-referential data structures.
-Attackers craft inputs with maximum nesting depth, quickly exhausting stack space with just kilobytes of malicious input.
-Deeply nested GraphQL queries are a common example.
+1. **Race conditions due to missing workflow orchestration.** When business workflows span multiple services, commands or
+   events can be handled out of order if no central orchestrator or saga coordinator enforces sequence. An attacker issues
+   the command for step N before step N–1 finalizes. The system treats each command independently and does not block or reorder
+   them. Because no atomic guard binds the steps into one transaction or ordered saga, the final action can complete even
+   though its prerequisite has not been applied.
+2. **Race conditions in hidden sub-states transitions.** Even within a single HTTP request, server-side frameworks often
+   execute several internal stages or sub-states in sequence. Between those stages there exists a millisecond-scale window.
+   If the application does not bundle all sub-state transitions into an atomic operation or use in-process synchronization,
+   an overlapping request can observe or act upon an intermediate sub-state. High-precision race techniques can inject that
+   request during the brief window, causing the protected action to execute out of order.
 
 ## Examples
 
-### Scenario 1: XML "Billion Laughs" attack 
+### Scenario #1: Airline Seat Upgrade Bypass
 
-XML "Billion Laughs" attack in IBM Sterling File Gateway: IBM Sterling File Gateway expands recursive XML entities without limits. A crafted DTD inflates a small request into billions of entity references, consuming all memory and crashing the gateway. Attack sequence:
+An airline API splits seat‑upgrade availability check and payment capture into two separate calls. If the payment call
+races in before the availability flag is recorded, upgrades go through even when no seats remain.
 
-1. **An attacker sends a malicious payload**
+Attackers can use the following sequence of steps to exploit this vulnerability:
 
+**Step 1.** Check upgrade availability (sets upgrade_allowed=true).
 ```shell
-POST /filegateway/receiveFile:
-<!DOCTYPE lolz [
-  <!ENTITY lol "lol">
-  <!ENTITY lol1 "&lol;&lol;&lol;">
-  …
-  <!ENTITY lol9 "&lol8;&lol8;&lol8;">
-]>&lol9;
-
+POST /api/flights/AA100/upgrades/check HTTP/1.1
+{ "passenger_id": "PAX123" }
 ```
 
-2. **File Gateway processes entities recursively until resource exhaustion.**
+**Step 2.** ~8 ms later, capture payment before availability flag persists.
+```shell
+POST /api/flights/AA100/upgrades/pay HTTP/1.1
+{ "passenger_id": "PAX123", "card_token": "tok_xyz" }
+```
 
-This results in order ingestion stopping, disrupting supply chains and preventing new transactions from entering the system.
+Because payment trusts the transient upgrade_allowed flag (which is still in its initial “allowed” state) the upgrade
+succeeds even if seats sold out in the meantime.
 
-## Mapped CWEs
-- CWE-511: Logic/Time Bomb
-- CWE-835: Loop with Unreachable Exit Condition ('Infinite Loop')
-- CWE-606: Unchecked Input for Loop Condition
-- CWE-674: Uncontrolled Recursion
+### Scenario #2: Admin‑Flag Initialization Bypass
 
-## Sample CVEs
-- CVE-2024-11612
-- CVE-2022-23437
-- CVE-2025-32399
+A CMS’s login handler first initializes every new session with role=admin then immediately downgrades it based on user data before returning. If you race a second request into the admin‑only dashboard endpoint before the downgrade executes, you retain admin privileges.
+To exploit this vulnerability, attackers can use the following sequence of HTTP calls:
+
+**Step 1.** Initiate login (long user‑lookup).
+
+```shell
+POST /login HTTP/1.1
+{ "user": "jdoe", "pass": "secret" }
+```
+
+**Step 2.** ~5 ms later, before downgrade runs, fetch admin page.
+
+```shell
+GET /admin/dashboard HTTP/1.1
+Cookie: session=eyJhbGciOi…
+```
+
+The dashboard grants access because the user still appears as admin in that fleeting sub‑state.
+
+## Mapped CWE
+- CWE‑841
+- CWE-367
+- CWE-368
+
+## Sample CVE
+- CVE-2025-31161
