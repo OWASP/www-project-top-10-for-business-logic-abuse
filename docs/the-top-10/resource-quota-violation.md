@@ -1,5 +1,5 @@
 ---
-title: "BLA7:2025 - Transition Validation Flaw"
+title: "BLA7:2025 Resource Quota Violation (RQV)"
 layout: col-sidebar
 tab: false
 order: 7
@@ -8,73 +8,145 @@ tags: business-logic-abuse
 
 ## Overview
 
-This class of vulnerabilities arises when systems advance workflows without confirming that required prior conditions for
-a transaction are met, letting attackers advance the business process without fully completing the previous steps. For
-instance,
+Business applications often expose endpoints that consume computational resources, trigger external services, or perform
+expensive operations without adequate throttling controls.
 
-These gaps can occur in APIs, web forms, network protocols, or any user-driven process, leading to fraud, data exposure,
-or service disruption
+When systems fail to implement proper rate limiting, usage quotas, or resource consumption monitoring, attackers can
+overwhelm services, exhaust system resources, or abuse business functionality to cause financial damage, service
+degradation, or operational disruption.
 
+This is especially true for software systems that rely on AI and LLMs: overconsumption of tokens by one user can cause
+DoS for all other customers.
 
-## Description
+## Root causes
 
-At their core, these weaknesses reflect a failure to enforce the integrity of business sequences and flow controls. They
-fall into these three patterns:
+Resource abuse vulnerabilities arise when applications lack proper controls over how frequently or intensively users can
+consume system resources. These flaws manifest in several critical areas:
+- **Missing Rate Limiting**: Endpoints that accept unlimited requests per time period, allowing attackers to flood
+services with API calls, form submissions, or resource-intensive operations that degrade performance for legitimate
+users.
 
-* **Steps performed out of required order:** Attackers trigger later-stage actions before fulfilling earlier prerequisites.
-* **Omitting mandatory checks:** Critical validations (for example payment verification or session setup) are never executed,
-so workflows jump ahead.
-* **Skipping or deferring flow enforcement:*. Validation logic runs too late or in the wrong scope, allowing unintended transitions.
+- **Inadequate Resource Quotas**: Business processes that lack consumption limits on expensive operations such as file
+generation, email sending, SMS delivery, or third-party API calls, enabling attackers to rack up costs or exhaust
+service limits.
 
-Consequences span financial loss, unauthorized access, and process deadlocks. These faults may escape standard role-based
-or input-validation tests because they exploit missing or misplaced business-process logic rather than broken permissions
-or malformed data
+- **Unbounded Resource Consumption**: Operations that scale with user input without upper bounds, such as bulk
+processing requests, large file uploads, or complex queries that can consume excessive CPU, memory, or storage resources.
 
+- **Business Logic Rate Abuse**: Exploiting legitimate functionality at excessive rates to gain unfair advantage, such
+as rapid-fire voting, automated content scraping, or mass account creation that violates intended usage patterns.
+
+- **Data Scraping & Brute-Force**: Absence of per-user or per-API-key limits enables attackers to scrape entire product
+catalogs or launch automated credential-guessing campaigns.
 
 ## Examples
 
-### Scenario #1: Skip checkout validation by manipulation the quantity of products
+### Scenario #1: Absent rate limit on an AI-enabled endpoint
+An AI-powered recommendation endpoint in an e-commerce platform generates personalized product suggestions by invoking
+an LLM. However, it imposes no per-user quotas on the number of tokens consumed or the frequency of calls, allowing a
+single user to exhaust compute capacity and drive up API costs.
 
-A vulnerability in spa-cartcms version 1.9.0.6 allows improper enforcement of behavioral workflow on the Checkout Page
-component.
-By submitting a negative value, such as -10, for the 'quantity' parameter, an attacker can bypass intended workflow validations.
-This flaw allows unauthorized manipulation of the checkout process, potentially leading to unintended behavior or unauthorized
-transactions.
-
-The vulnerability can be exploited remotely without requiring user interaction or elevated privileges.
-
-
-### Scenario #2: Users can check out unpublished products in microweber
-
-microweber ≤2024.04.1 lets attackers purchase items that an admin has unpublished or deleted by skipping the publication-check step in the checkout flow. As a result, attackers can acquire unavailable products, disrupting inventory controls and business workflows:
-
-1. Admin unpublishes a product:
+1. Legitimate recommendation request:
 
 ```shell
-POST /api/shop/items/publish
+GET /recommendations \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -H "Accept: application/json" 
+```
+
+The server:
+- Authenticates the JWT.
+- Looks up userId and their purchase/browsing history in its own database.
+- Calls the AI-enabled recommendation engine to retrieve recommended products.
+- Returns a list of products.
+
+2. Attack - unbounded request flood:
+
+```shell
+POST /api/newsletter/subscribe (×10,000 requests)
+Body: { "email": "victim@example.com", "list": "weekly" } 
+```
+
+Because the endpoint lacks any rate limiting or per-user quota:
+- Each call spins up an expensive AI inference.
+- The attacker drives up compute and API-provider costs.
+- Legitimate users experience slow or failed recommendation responses.
+- The service risks DoS and large overage bills from its AI vendor.
+
+### Scenario #2: Insufficient rate limit for expensive operations
+A PDF generation service exposes GraphQL endpoints to its customers with a flat limit of 100 calls per minute per user.
+Every operation counts as one call. Because the generatePDF mutation uses much more CPU and memory but still counts as a
+single call an attacker can exhaust server resources while staying inside the rate limit.
+
+1. Legitimate user session:
+   1.1. Get all documents available to a user:
+```shell
+POST /graphql
 {
-    "itemId":55,
-    "action":"unpublish"
+  "query": "
+    query ListDocuments {
+      documents {
+        id
+        title
+      }
+    }
+  "
+} 
+```
+
+1.2. Generate a single document and quit:
+
+```shell
+POST /graphql
+{
+  "query": "
+    mutation GeneratePDF($input: PDFInput!) {
+      generatePDF(input: $input) {
+        jobId
+        url
+      }
+    }
+  ",
+  "variables": {
+    "input": {
+      "template": "invoice",
+      "data": { /* order details */ }
+    }
+  }
 }
 ```
 
-At this moment, products are not visible to users.
-
-2. However, an attacker can still add check out such item using APIs:
+2. Attack. Mutation flood within rate limit quota:
 
 ```shell
-POST /api/shop/checkout
-{
-  "itemId": 55
-}
+for i in $(seq 1 100); do
+  curl -s -X POST https://api.acme.com/graphql \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "query": "
+        mutation {
+          generatePDF(input: {
+            template: \"full_catalog\",
+            data: { /* 200-page report */ }
+          }) {
+            jobId
+          }
+        }
+      "
+    }' &
+done
+wait 
 ```
+
+Note that the attacker stays within the rate limit quota by performing just 100 calls. However, high CPU consumption
+causes by excessive PDF generation may cause DoS or slower responses for other users.
 
 ## Mapped CWEs
-- CWE-841
-- CWE-691
+- CWE-770: Allocation of Resources Without Limits or Throttling
+- CWE-400: Uncontrolled Resource Consumption
+- CWE-799: Improper Control of Interaction Frequency
 
 ## Sample CVEs
-- CVE-2025-48376
-- CVE-2024-39325
-- CVE-2023-1383
-- CVE-2024-6128
+- CVE-2023-37934
+- CVE-2025-26524

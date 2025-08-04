@@ -1,5 +1,5 @@
 ---
-title: "BLA8:2025 - Replays of Idempotency Operations"
+title: "BLA8:2025 - Internal State Disclosure (ISD)"
 layout: col-sidebar
 tab: false
 order: 8
@@ -8,70 +8,114 @@ tags: business-logic-abuse
 
 ## Overview
 
-This category covers business processes that must execute only once but can be replayed when APIs lack proper safeguards.
-By omitting unique identifiers, history checks, or token invalidation, simple retries or replays trigger duplicate refunds,
-repeated system resets, or multiple password changes. The result is financial errors, operational disruption, and weakened
-security controls.
+When systems display different messages, codes, visuals, or delays for valid versus invalid inputs, whether it is in a
+login dialog, registration form, password-reset prompt, or data query they leak protected business states.
 
-## Description
+Attackers exploit these side channels to enumerate accounts, verify resource existence, and map workflow logic,
+undermining confidentiality and laying groundwork for targeted intrusion or fraud.
 
-These weaknesses undermine business processes by failing to enforce one-time workflow constraints:
-* **Unrestricted repeatable actions:** Critical operations such as account creation, refunds, or invoice creation proceed on every identical request because no unique key or usage record is required.
-* **Replayable one-time tokens:** Workflows relying on transient flags or consumed tokens, such as consumption loyalty credits, password resets, and similar, do not record usage or invalidate tokens, so the same request can re-trigger password resets, email confirmations, and similar actions.
+
+## Root causes
+
+These side-channels arise because systems tie UI feedback directly to internal checks instead of normalizing all outputs.
+As a result, attackers gain an oracle that confirms hidden states.
+Common forms include:
+- **Distinct error messages**: Feedback such as “username not found” versus “incorrect password” pinpoints which
+validation failed, guiding enumeration.
+
+- **Message detail level**: Stack traces or validation notes shown in dialog boxes expose implementation details and
+code paths.
+
+- **UI element presence**: Optional fields or links appearing only for valid cases (e.g., “resend activation” shown for
+existing users) betray state.
+
+- **Status indicators**: Different icons, colors, or access controls in a dashboard for valid versus invalid resources
+reveal existence and permissions.
+
+- **Timing variations**: Delays from hashing or database lookups for valid inputs contrast with immediate failures for
+invalid ones, enabling side-channel attacks.
+
+- By failing to standardize all user-facing outputs, these systems break the abstraction between business-process checks
+and presentation, allowing attackers to reverse-engineer workflows and data.
 
 ## Examples of attacks
 
-### Scenario #1: Token replay attack
+### Scenario #1: Reveal account existence through verbose authentication message
 
-The ORY Hydra OAuth2 server (pre-1.4.0) failed to blacklist JWT IDs (JTIs), allowing replay of a client’s JWT assertion during client-authentication:
+In Joomla before version 3.9.23, entering an unknown username on the administrator login page returns “Username not
+found,” whereas a wrong password on a valid account shows “Password incorrect”.
 
-**Legitimate call:**
+1. Authentication request by a non-existing user:
+
 ``` shell
-POST /oauth2/token' \
---header 'Content-Type: application/x-www-form-urlencoded' \
---data-urlencode 'grant_type=client_credentials' \
---data-urlencode 'client_id=c001d00d-5ecc-beef-ca4e-b00b1e54a111' \
---data-urlencode 'scope=application openid' \
---data-urlencode 'client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer' \
---data-urlencode 'client_assertion=eyJhb [...] jTw'
-
-Response: {"access_token":"zeG0NoqOtlACl8q5J6A-TIsNegQRRUzqLZaYrQtoBZQ.VR6iUcJQYp3u_j7pwvL7YtPqGhtyQe5OhnBE2KCp5pM","expires_in":3599,"scope":"application openid","token_type":"bearer"}
+POST /administrator/index.php
+{
+    "username": "ghost",
+    "password": "non-existing"
+}
 ```
 
-**Attack call with the same assertion that should be only used once enables JTI replay attack:**
+Response:
+- Status: 200 OK.
+- UI: “Username not found”.
+
+2. Authentication request by an existing user with wrong password:
+
 ```shell
-POST /oauth2/token' \
---header 'Content-Type: application/x-www-form-urlencoded' \
---data-urlencode 'grant_type=client_credentials' \
---data-urlencode 'client_id=c001d00d-5ecc-beef-ca4e-b00b1e54a111' \
---data-urlencode 'scope=application openid' \
---data-urlencode 'client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer' \
---data-urlencode 'client_assertion=eyJhb [...] jTw'
-Response: {"access_token":"wOYtgCLxLXlELORrwZlmeiqqMQ4kRzV-STU2_Sollas.mwlQGCZWXN7G2IoegUe1P0Vw5iGoKrkOzOaplhMSjm4","expires_in":3599,"scope":"application openid","token_type":"bearer"}
+POST /administrator/index.php
+{
+    "username": "admin",
+    "password": "invalid"
+}
 ```
 
+Response:
+- Status: 200 OK.
+- UI: “Password incorrect”.
 
-### Scenario #2: Partial Refund in WooCommerce
+That enables attackers to scan common names and isolate valid admin accounts for brute-force.
 
-A partial-refund endpoint in WooCommerce lacked replay safeguards, so network glitches or malicious replays triggered multiple refunds.
+### Scenario #2: Request timing differences reveal account existence
 
-**Legit return:**
+Versions of the Fides open-source server prior to 2.44.0 only hashed passwords for existing users, adding ~0.40 s versus
+~0.05 s for unknown ones.
+
+1. Authentication request by an existing user with incorrect password:
 
 ```
-POST /wp-json/wc/v3/orders/12345/refunds
-Body: { "amount": 10.00, "lineItems": [..]}
+POST /api/auth/login
+{
+    "username": "Alice"
+    "password": "xxx"
+}
 ```
 
-**Replayed due to client retry or attacker:**
+Response:
+- Latency: 0.45 s.
+- Status: 401.
+
+
+2. Authentication request by a non-existing user:
+
 ```
-POST /wp-json/wc/v3/orders/12345/refunds
-Body: { "amount": 10.00, "lineItems": [..] }
+POST /api/auth/login
+{
+    "username": "Bob",
+    "password": "yyy"
+}
 ```
+
+Response:
+- Latency: 0.05 s.
+- Status: 401.
+
+Attackers measure this timing gap to build a list of valid users before attempting password attacks.
 
 ## Mapped CWEs
-- CWE-837
-- CWE-799
+- CWE-1230
+- CWE-200
+- CWE-203
 
 ## Sample CVEs
-- CVE-2025-1968
-- CVE-2025-3479
+- CVE-2020-35614
+- CVE-2024-45052

@@ -1,5 +1,5 @@
 ---
-title: "BLA6:2025 - Missing Roles and Permission Checks"
+title: "BLA6:2025 - Missing Transition Validation (MTV)"
 layout: col-sidebar
 tab: false
 order: 6
@@ -8,84 +8,66 @@ tags: business-logic-abuse
 
 ## Overview
 
-Business workflows relying on gated role validations assume that only entitled actors execute sensitive transitions
-(e.g., branch deletion, transaction approval).
-
-When implementations omit roles or permissions checks or apply them incorrectly,
-attackers manipulate role identifiers or permission assignments to bypass controls and perform unauthorized operations,
-leading to privilege escalation and data integrity breaches.
+Transition Validation Flaws occur when an API defers or omits essential checks during multi-step state changes.
+Attackers bypass mandatory validations, for example second-factor checks or approval flags, by calling a later endpoint
+directly or by racing the validation step. As a result, security controls that rely on sequential validations are
+bypassed, allowing unauthorized workflows.
 
 
-## Description
+## Root causes
 
-When a system exposes endpoints without verifying that the requester has the necessary privileges, unauthorized actors
-can trigger sensitive transitions meant only for higher-tier roles.
+APIs that break a process into multiple calls must re-validate prerequisite conditions in each step or lock them into a
+single atomic operation. If the final action trusts that prerequisites were met earlier, without re-checking on
+invocation, attackers can call the action endpoint before validations complete or skip them entirely. This gap between
+state transitions and validation enforcement leads to logic bypass.
 
-Common failures include endpoints that omit role checks entirely, authorization logic trusting client-supplied parameters,
-overly broad default permissions, and identifier tampering (BOLA) to bypass intended restrictions. These lapses allow
-attackers to sidestep intended controls, modify or delete protected resources, and disrupt critical business workflows.
-
-In practice, these authorization gaps surface through several common failures:
-* **Missing Role Checks:** Endpoints accepting any authenticated token for sensitive actions due to absent server-side guards.
-
-* **Flawed Logic Trusting Client Data:** Authorization based on headers or query parameters (e.g., X-User-Role) that
-clients can forge to gain elevated rights.
-
-* **Overly broad ACLs:** Default or misconfigured permissions granting lower-tier roles access to administrative functions
-or data through hidden or undocumented endpoints.
-
-* **Identifier tampering:** Manipulating object IDs in paths or payloads to access or modify others’ resources (e.g., changing
-`/orders/200` to `/orders/201`). This is essentially the BOLA vulnerability.
+Alternatively, an attacker can manipulate transition indicators or tokens sent as input by overwriting or forging them
+to simulate successful earlier steps. By crafting request parameters (for example, step flags, sequence numbers or
+hidden form fields) to appear as though all validations passed, the final endpoint runs without any checks. This
+input-based manipulation exploits the missing transition validation to bypass the entire workflow and perform
+unauthorized actions.
 
 ## Examples
 
-### Scenario #1: Gitlab branch deletion
+### Scenario #1: Next.js Middleware Bypass
 
-A Gitlab branch deletion endpoint lacked any role or permission check, so any valid token will succeed regardless of its scope:
-1. For a legitimate call by a maintainer, the system verifies the token is valid and then deletes the branch:
+A critical vulnerability in Next.js allowed attacker to skip all middleware processing by exploiting the
+`x-middleware-subrequest` header. Originally intended to mark internal framework calls and prevent infinite recursion,
+this header can be manipulated by external requests due to a design oversight.
+
+By sending a request with a specially crafted `x-middleware-subrequest` value, an attacker causes the application to skip
+all middleware processing, including access restrictions, session validation, and any other controls implemented there.
+
+### Scenario #2: Users can check out unpublished products in microweber
+
+microweber ≤2024.04.1 lets attackers purchase items that an admin has unpublished or deleted by skipping the
+publication-check step in the checkout flow. As a result, attackers can acquire unavailable products, disrupting
+inventory controls and business workflows:
+
+1. Admin unpublishes a product:
+
 ```shell
-DELETE /api/v4/projects/:projectId/repository/branches/:branchId
-
-Authorization: Bearer MAINTAINER_TOKEN
-```
-
-2. However, the same call can be performed by a user without delete_branch permission. Since the system doesn’t verify the
-role of the caller, that call will succeed as well: 
-```shell
-DELETE /api/v4/projects/:projectId/repository/branches/:branchId
-
-Authorization: Bearer MAINTAINER_TOKEN
-```
-
-
-### Scenario #2: Allowing users to edit their permissions
-
-A vulnerability in the component /households/permissions of hay-kot mealie v2.2.0 allows group managers to edit their own
-permissions. Attack sequence:
-1. Obtain a bearer token via the Mealie token endpoint.
-2. Add more permission to a user:
-```shell
-PUT /api/households/permissions
+POST /api/shop/items/publish
 {
-    "userId": "fb97d64d-7a4e-4287-9708-f56b3417869b",
-    "canInvite": true,
-    "canManageHousehold": true,
-    "canManage": true,
-    "canOrganize": true,
-}
+    "itemId":55,
+    "action":"unpublish"
+} 
 ```
 
-This way users can escalate their privileges.
+2. However, an attacker can still add check out such item using APIs:
+
+```shell
+POST /api/shop/checkout
+{
+  "itemId": 55
+} 
+```
 
 ## Mapped CWEs
-- CWE-863
-- CWE-862
-- CWE-732
-- CWE-284
-- CWE-639
+- CWE-288
+- CWE-841
+- CWE-691
 
 ## Sample CVEs
-- CVE-2023-3290
-- CVE-2023-3286
-- CVE-2024-55070
-- CVE-2021-39931
+- CVE-2025-4427/4428
+- CVE-2025-29927
