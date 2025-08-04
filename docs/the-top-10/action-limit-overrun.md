@@ -1,5 +1,5 @@
 ---
-title: "BLA1:2025 - Lifecycle & Orphaned Transitions Flaws"
+title: "BLA1:2025 - Action Limit Overrun (ALO)"
 layout: col-sidebar
 tab: false
 order: 1
@@ -8,8 +8,10 @@ tags: business-logic-abuse
 
 ## Overview
 
-Business workflows often create temporary artifacts, such as sessions, tokens, or sub-flows, to manage multi-step processes,
-like account sign-up, configuration wizards, or batch jobs.
+Overrun Limit of Idempotent Operations happens when an operation that is meant to execute a specific number of times can
+actually be performed multiple times in quick succession. Well-known examples are redeeming a coupon, issuing a refund,
+or granting a free trial.
+
 
 If these artifacts remain active after the parent process ends, attackers can reuse or replay them to invoke orphaned transitions,
 bypass controls, and corrupt business logic, leading to unauthorized actions, data exposure, or process disruptions.
