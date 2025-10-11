@@ -1,0 +1,25 @@
+audience:
+  - breaker
+  - builder
+leaders:
+  - name: Ivan Novikov
+    email: ivan.novikov@owasp.org
+    github: d0znpp
+  - name: Sergei Lega
+    email: slega@wallarm.com
+    github: slega
+  - name: Silvia Pravida
+    email: silvia78263@gmail.com
+level: 2
+name: OWASP Top 10 for Business Logic Abuse
+pitch: A very brief, one-line description of your project
+repositories:
+  - name: www-project-top-10-for-business-logic-abuse
+    url: https://github.com/OWASP/www-project-top-10-for-business-logic-abuse
+    description: OWASP Foundation web repository
+tags:
+  - example-tag
+  - custom-tag-1
+  - custom-tag-2
+type: documentation
+website: https://owasp.org/www-project-top-10-for-business-logic-abuse
