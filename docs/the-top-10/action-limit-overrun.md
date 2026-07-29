@@ -23,9 +23,9 @@ leading to financial loss, inventory depletion, or exhaustion of limited offers.
 This flaw exists solely because multiple requests against the same resource collide while reading and writing its usage
 state without synchronization. When two or more processes:
 
-1. Read the “remaining uses” counter or “unused” flag at the same time (time-of-check),
-2. 
-2. Then both proceed to apply the action (time-of-use) before either write commits, each sees the original pre-update
+1. Read the “remaining uses” counter or “unused” flag at the same time (time-of-check).
+2. Validate the resource as available based on the same stale state.
+3. Then both proceed to apply the action (time-of-use) before either write commits, each sees the original pre-update
 state and is allowed to succeed.
 
 Without a lock, transactional guard, or any atomic increment/decrement, the counter may underflow or accept duplicates.
