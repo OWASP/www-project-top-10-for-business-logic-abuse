@@ -20,7 +20,7 @@ Hidden features stem from three distinct root causes:
 
 - **Shadow functionality** is created by unauthorized teams or tools and remains unknown to security, escaping
 governance and review.
-- 
+ 
 - **Deprecated functionality** should have been removed but stay accessible in production long after their intended
 retirement.
 
