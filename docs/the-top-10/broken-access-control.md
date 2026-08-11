@@ -58,7 +58,7 @@ Authorization: Bearer MAINTAINER_TOKEN
 
 ```shell
 DELETE /api/v4/projects/:projectId/repository/branches/:branchId
-Authorization: Bearer MAINTAINER_TOKEN
+Authorization: Bearer USER_TOKEN
 ```
 
 ### Scenario #2: Allowing users to edit their permissions
